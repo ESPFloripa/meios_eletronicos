@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Curso Livre - ESP Floripa</title>
+    
+    <!-- React & ReactDOM (Via CDN) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel para processar o código React no navegador -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS (Estilos) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonte Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        
+        .gradient-header { background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%); }
+        
+        .main-banner {
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.95) 40%, rgba(255, 255, 255, 0.6) 100%), url('https://i.imgur.com/XKMEd6N.png');
+            background-size: cover;
+            background-position: center;
+            border-bottom: 4px solid #0f766e;
+        }
+
+        .animate-fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Flip Card Styles */
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .flip-card-inner { transition: transform 0.6s; }
+        .flip-card:hover .flip-card-inner { transform: rotateY(180deg); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- Ícones SVG (Convertidos de Lucide para Inline para funcionar sem build) ---
+        const Icons = {
+            BookOpen: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+            Play: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>,
+            Mail: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>,
+            MessageCircle: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"></path></svg>,
+            Share2: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"></line><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"></line></svg>,
+            FileText: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" x2="8" y1="13" y2="13"></line><line x1="16" x2="8" y1="17" y2="17"></line><line x1="10" x2="8" y1="9" y2="9"></line></svg>,
+            PenTool: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19 7-7 3 3-7 7-3-3z"></path><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="m2 2 7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>,
+            CheckCircle: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>,
+            Circle: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle></svg>,
+            Menu: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"></line><line x1="4" x2="20" y1="6" y2="6"></line><line x1="4" x2="20" y1="18" y2="18"></line></svg>,
+            X: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>,
+            Clock: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>,
+            User: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>,
+            Layout: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><line x1="3" x2="21" y1="9" y2="9"></line><line x1="9" x2="9" y1="21" y2="9"></line></svg>,
+            ExternalLink: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" x2="21" y1="14" y2="3"></line></svg>,
+            Info: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>,
+            Shield: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>,
+            Camera: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>,
+            BarChart: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>,
+            Users: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>,
+            AlertTriangle: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>,
+            Settings: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>,
+            Home: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>,
+            ClipboardCheck: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>,
+            GraduationCap: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        };
+
+        const SectionHeader = ({ iconName, title, duration, isCompleted, onToggle }) => {
+            const Icon = Icons[iconName];
+            return (
+                <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 border-b pb-4 border-gray-200">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-teal-100 text-teal-700 rounded-lg">
+                            <Icon size={24} />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+                            {duration && (
+                                <div className="flex items-center text-sm text-gray-500 gap-2">
+                                    <Icons.Clock size={14} />
+                                    <span>{duration}</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    <button 
+                        onClick={onToggle}
+                        className={`mt-4 md:mt-0 flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 ${
+                            isCompleted 
+                            ? 'bg-green-100 text-green-700 border border-green-200 hover:bg-green-200' 
+                            : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
+                        }`}
+                    >
+                        {isCompleted ? <Icons.CheckCircle size={18} /> : <Icons.Circle size={18} />}
+                        {isCompleted ? 'Concluído' : 'Marcar como concluído'}
+                    </button>
+                </div>
+            );
+        };
+
+        const EmailSimulator = () => (
+            <div className="bg-white border rounded-lg shadow-sm overflow-hidden mt-6 max-w-3xl mx-auto">
+                <div className="bg-gray-100 px-4 py-2 border-b flex justify-between items-center">
+                    <span className="text-xs font-bold text-gray-500">NOVA MENSAGEM</span>
+                    <div className="flex gap-1">
+                        <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                        <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                        <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                    </div>
+                </div>
+                <div className="p-6 text-sm">
+                    <div className="grid grid-cols-[80px_1fr] gap-y-2 mb-4 border-b pb-4">
+                        <span className="text-gray-500 font-medium">De:</span>
+                        <span className="font-semibold text-gray-800 break-words">Antenor da Silva &lt;antenor.silva@saude.floripa.sc.gov.br&gt;</span>
+                        <span className="text-gray-500 font-medium">Para:</span>
+                        <span className="text-gray-800">José Santos</span>
+                        <span className="text-gray-500 font-medium">Assunto:</span>
+                        <span className="font-bold text-teal-700">Revisar documento (10 minutos) - Atualização do projeto UPA - Prazos ajustados</span>
+                    </div>
+                    <div className="space-y-4 text-gray-700 leading-relaxed">
+                        <p>Caro José, boa tarde!</p>
+                        <p>Solicito que você revise o documento que pode ser encontrado em anexo referente à atualização dos prazos do projeto da nova UPA do município.</p>
+                        <p className="bg-yellow-50 p-2 border-l-4 border-yellow-400">
+                            Recomendo que dê atenção aos itens 5, 6 e 7 que foram alterados e encontram-se nas páginas 10 e 11 do documento.
+                        </p>
+                        <p>Por favor, responda ainda hoje se possível.</p>
+                        <div className="pt-4 border-t mt-4">
+                            <p className="font-semibold">Obrigado! Atenciosamente,</p>
+                            <p className="font-bold text-teal-800 mt-1">Antenor da Silva</p>
+                            <p className="text-xs text-gray-500">Gerente de Urgência e Emergência<br/>Secretaria de Saúde de Florianópolis</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        const App = () => {
+            const [activeTab, setActiveTab] = useState(0);
+            const [completed, setCompleted] = useState([false, false, false, false, false, false]);
+            const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+            const [isModalOpen, setIsModalOpen] = useState(false);
+
+            useEffect(() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, [activeTab]);
+
+            const toggleComplete = (index) => {
+                const newCompleted = [...completed];
+                newCompleted[index] = !newCompleted[index];
+                setCompleted(newCompleted);
+            };
+
+            const progress = Math.round((completed.filter(Boolean).length / completed.length) * 100);
+
+            const activities = [
+                { id: 0, title: "Introdução", icon: 'Home', duration: "5 min" },
+                { id: 1, title: "1ª Ativ: Boas Práticas E-mails", icon: 'Mail', duration: "20 min" },
+                { id: 2, title: "2ª Ativ: Boas Práticas no uso de Mensageria", icon: 'MessageCircle', duration: "20 min" },
+                { id: 3, title: "3ª Ativ: Boas Práticas em Redes Sociais", icon: 'Users', duration: "20 min" },
+                { id: 4, title: "4ª Ativ: Guias Oficiais Leitura", icon: 'Share2', duration: "30 min" },
+                { id: 5, title: "5ª Ativ: Exercício Final", icon: 'ClipboardCheck', duration: "25 min" }
+            ];
+
+            const scrollToActivity = (index) => {
+                setActiveTab(index);
+                setIsSidebarOpen(false);
+            };
+
+            const renderContent = () => {
+                switch(activeTab) {
+                    case 0:
+                        return (
+                            <div className="animate-fade-in">
+                                <SectionHeader iconName="Home" title="Introdução ao Curso" duration="5 minutos" isCompleted={completed[0]} onToggle={() => toggleComplete(0)} />
+                                <div className="bg-white p-8 rounded-xl shadow-md border-l-4 border-teal-600 mb-8">
+                                    <h3 className="text-xl font-bold text-teal-800 mb-4 flex items-center gap-2">
+                                        <Icons.Info size={24} className="text-teal-600" />
+                                        Importância das Boas Práticas na Comunicação
+                                    </h3>
+                                    <div className="text-gray-700 leading-relaxed text-justify space-y-4">
+                                        <p>A adoção de Boas Práticas de comunicação por meios eletrônicos — como e-mail institucional, SMS, WhatsApp, Telegram e redes sociais — é essencial para instituições públicas, especialmente na área da saúde, pois garante segurança da informação, transparência, rastreabilidade e uniformidade no relacionamento com a população.</p>
+                                        <p>Esses canais, quando usados de forma padronizada e responsável, reduzem riscos de vazamento de dados sensíveis, fortalecem a credibilidade institucional, evitam ruídos de comunicação e asseguram que mensagens oficiais circulem com linguagem adequada, fontes verificadas e propósito alinhado às políticas públicas de saúde.</p>
+                                        <p>Além disso, boas práticas promovem comunicação mais ágil e acessível, ampliam o alcance das ações de educação em saúde e contribuem para a construção de vínculos de confiança entre gestores, profissionais e cidadãos.</p>
+                                    </div>
+                                </div>
+                                <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Assista ao vídeo:</h3>
+                                    <div className="aspect-w-16 aspect-h-9 bg-gray-900 rounded-lg overflow-hidden shadow-lg mb-4">
+                                        <iframe className="w-full h-64 md:h-96" src="https://www.youtube.com/embed/fp9E830C7JI" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    case 1:
+                        return (
+                            <div className="animate-fade-in">
+                                <SectionHeader iconName="Mail" title="Boas Práticas E-mails" duration="20 minutos" isCompleted={completed[1]} onToggle={() => toggleComplete(1)} />
+                                <div className="space-y-8">
+                                    <div className="bg-white rounded-xl shadow-sm p-6">
+                                        <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Introdução: Vídeo Educativo</h3>
+                                        <p className="text-gray-700 mb-4">Nos últimos anos o uso de e-mails em comunicações institucionais tem perdido espaço para aplicativos de mensagens, mas ainda é crucial em muitas situações formais. A redação adequada de e-mails institucionais é fundamental para garantir clareza, profissionalismo e eficiência na comunicação interna e externa da instituição. Mensagens bem estruturadas facilitam a compreensão, evitam retrabalhos, reduzem ruídos e reforçam a credibilidade da organização, além de contribuírem para registros formais precisos e rastreáveis, essenciais especialmente no serviço público e na área da saúde.</p>
+                                        <div className="aspect-w-16 aspect-h-9 bg-gray-900 rounded-lg overflow-hidden shadow-lg mb-4">
+                                            <iframe className="w-full h-64 md:h-96" src="https://www.youtube.com/embed/E438kYS-I6k" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
+                                        </div>
+                                        <p className="text-sm text-gray-500 text-center italic">* Vídeo: The Email We All Need to Send (Harvard Business Review).</p>
+                                    </div>
+                                    <div className="bg-white rounded-xl shadow-sm p-6">
+                                        <h3 className="text-lg font-bold text-gray-800 mb-6 border-b pb-2">Dicas para Redação de E-mails Institucionais</h3>
+                                        <div className="grid md:grid-cols-2 gap-6">
+                                            <div className="space-y-4">
+                                                {[ { t: "1. Assunto Claro", d: "Indique o propósito e o tempo estimado para a ação." }, { t: "2. Destinatários", d: "Apenas os estritamente necessários. Questione: essa pessoa tem uma ação a realizar?" }, { t: "3. Saudação", d: "Adapte ao grau de formalidade (Prezado vs Olá)." }, { t: "4. Direto ao Ponto", d: "Objetivo logo no início. Parágrafos curtos." }, { t: "5. Tom e Linguagem", d: "Profissional. Sem gírias ou emojis excessivos." }, { t: "6. Específico", d: "Detalhes suficientes para evitar 'vai-e-vem'. Use listas." }, { t: "7. Conclusão", d: "Pedido de ação claro e prazo de resposta razoável." }, { t: "8. Despedida", d: "Cordial (Atenciosamente/Abraços) + Assinatura completa." }, { t: "9. Revisão", d: "Cheque gramática, ortografia e anexos antes de enviar." } ].map((tip, idx) => (
+                                                    <div key={idx} className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-teal-500 hover:bg-teal-50 transition-colors">
+                                                        <h3 className="font-bold text-teal-800 mb-1">{tip.t}</h3>
+                                                        <p className="text-gray-600 text-sm">{tip.d}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div>
+                                                <div className="sticky top-6">
+                                                    <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2"><Icons.Layout size={20} /> Exemplo de Aplicação</h3>
+                                                    <EmailSimulator />
+                                                    <div className="mt-4 bg-blue-50 p-4 rounded-lg text-sm text-blue-800"><strong>Análise do Exemplo:</strong> Observe como o assunto inclui o tempo estimado (10 min), a saudação é formal, o corpo indica exatamente onde olhar (págs 10 e 11) e há um prazo claro para resposta.</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    case 2:
+                        const whatsappGuides = [
+                            { id: 1, title: "1. Configuração Inicial", icon: "Settings", details: [ { sub: "1.1. Imagem e Nome", text: "Use foto profissional/neutra e nome completo. Evite apelidos." }, { sub: "1.2. Privacidade", text: "Ajuste configurações para proteger informações pessoais." } ] },
+                            { id: 2, title: "2. Criação de Grupos", icon: "Layout", details: [ { sub: "2.1. Objetivo", text: "Finalidade específica alinhada à instituição." }, { sub: "2.2. Nome", text: "Objetivo e claro." }, { sub: "2.3. Participantes", text: "Apenas envolvidos diretos; avise antes de adicionar." }, { sub: "2.4. Regras", text: "Defina horários e tipos de conteúdo permitidos." } ] },
+                            { id: 3, title: "3. Horários e Frequência", icon: "Clock", details: [ { sub: "3.1. Comercial", text: "Envie durante o expediente, salvo acordos prévios." }, { sub: "3.2. Urgências", text: "Apenas casos essenciais fora do horário. Justifique a urgência." } ] },
+                            { id: 4, title: "4. Redação de Mensagens", icon: "PenTool", details: [ { sub: "4.1. Clareza", text: "Seja direto. Evite mensagens longas." }, { sub: "4.2. Formalidade", text: "Linguagem respeitosa. Sem gírias ou excesso de emojis." }, { sub: "4.3. Áudios", text: "Se necessário, mantenha-o breve." }, { sub: "4.4. Confirmação", text: "Solicite/envie confirmação de leitura se preciso." } ] },
+                            { id: 5, title: "5. Compartilhamento", icon: "Share2", details: [ { sub: "5.1. Pertinência", text: "Conteúdo relevante ao propósito." }, { sub: "5.2. Confidencialidade", text: "Jamais compartilhe dados sensíveis sem autorização." }, { sub: "5.3. Links/Mídias", text: "Verifique a fonte antes de encaminhar." } ] },
+                            { id: 6, title: "6. Etiqueta na Interação", icon: "MessageCircle", details: [ { sub: "6.1. Volume", text: "Reúna informações em uma única mensagem." }, { sub: "6.2. Rapidez", text: "Responda em tempo hábil (especialmente prioridades)." }, { sub: "6.3. Cordialidade", text: "Evite tons agressivos." }, { sub: "6.4. Feedback", text: "Responda solicitações de forma clara." } ] },
+                            { id: 7, title: "7. Mensagens Individuais", icon: "User", details: [ { sub: "7.1. Objetividade", text: "Informe o assunto de imediato." }, { sub: "7.2. Respeito", text: "Evite insistências. Aguarde tempo razoável." } ] },
+                            { id: 8, title: "8. Conflitos", icon: "Info", details: [ { sub: "8.1. Uso Adequado", text: "Trate questões delicadas pessoalmente." }, { sub: "8.2. Tom de Voz", text: "Mantenha a neutralidade em divergências." } ] },
+                            { id: 9, title: "9. Atualização", icon: "CheckCircle", details: [ { sub: "9.1. Capacitação", text: "Oriente periodicamente sobre o uso." }, { sub: "9.2. Regras", text: "Revise o guia regularmente." } ] }
+                        ];
+                        const waGreenDark = "#075e54"; const waGreenLight = "#25d366"; const waGreenBackground = "#dcf8c6"; const waBeige = "#ece5dd"; const waTeal = "#128c7e";
+                        return (
+                            <div className="animate-fade-in">
+                                <SectionHeader iconName="MessageCircle" title="Boas Práticas no uso de Mensageria (Whatsapp, Telegram, SMS, etc.)" duration="20 minutos" isCompleted={completed[2]} onToggle={() => toggleComplete(2)} />
+                                <div className="mb-6 p-6 rounded-xl shadow-sm border-l-4" style={{ backgroundColor: waBeige, borderColor: waGreenDark }}>
+                                    <h3 className="text-lg font-bold mb-2" style={{ color: waGreenDark }}>Guia de Uso Institucional</h3>
+                                    <p style={{ color: '#4a4a4a' }}>Os serviços de mensageria, como Whatsapp e outros, são ferramentas poderosas, mas exigem cuidados específicos para garantir profissionalismo e respeito às hierarquias. Passe o mouse (ou toque) nos cartões abaixo para ver os detalhes de cada diretriz.</p>
+                                </div>
+                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {whatsappGuides.map((guide) => (
+                                        <div key={guide.id} className="flip-card group bg-transparent w-full h-80 perspective-1000 cursor-pointer">
+                                            <div className="flip-card-inner relative w-full h-full text-center transition-transform duration-700 transform-style-3d shadow-md rounded-xl">
+                                                <div className="absolute w-full h-full backface-hidden rounded-xl flex flex-col items-center justify-center p-6" style={{ backgroundColor: 'white', border: `2px solid ${waGreenBackground}` }}>
+                                                    <div className="p-4 rounded-full mb-4 text-white shadow-sm" style={{ backgroundColor: waGreenLight }}>
+                                                        {Icons[guide.icon] ? React.createElement(Icons[guide.icon], { size: 32 }) : null}
+                                                    </div>
+                                                    <h3 className="text-xl font-bold" style={{ color: waTeal }}>{guide.title}</h3>
+                                                    <p className="text-xs mt-4 uppercase tracking-widest font-semibold" style={{ color: waGreenDark }}>Ver Detalhes</p>
+                                                </div>
+                                                <div className="absolute w-full h-full backface-hidden rotate-y-180 rounded-xl p-6 flex flex-col justify-center text-left overflow-y-auto" style={{ backgroundColor: waGreenDark, color: 'white' }}>
+                                                    <h4 className="font-bold border-b pb-2 mb-3 text-lg" style={{ borderColor: waGreenLight }}>{guide.title}</h4>
+                                                    <ul className="space-y-3 text-sm">{guide.details.map((detail, idx) => ( <li key={idx}><span className="font-bold block text-xs" style={{ color: waGreenBackground }}>{detail.sub}</span><span className="leading-tight">{detail.text}</span></li>))}</ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    case 3:
+                        const socialMediaGuides = [
+                            { id: 1, title: "Objetivo das Redes", icon: "Layout", details: [ { sub: "Serviço ao Cidadão", text: "Canal ágil para responder, receber reclamações e sugestões." }, { sub: "Aprofundar Notícias", text: "Divulgar informações municipais com maior profundidade (vídeos, infográficos)." }, { sub: "Emergências", text: "Comunicação imediata em alertas ou incidentes." } ] },
+                            { id: 2, title: "1. Comunicação Clara", icon: "MessageCircle", details: [ { sub: "Linguagem Acessível", text: "Evite jargões e termos técnicos." }, { sub: "Objetividade", text: "Vá direto ao ponto com informações completas." }, { sub: "Correção", text: "Revise gramática e ortografia sempre." } ] },
+                            { id: 3, title: "2. Postagens Educativas", icon: "BookOpen", details: [ { sub: "Pautas", text: "Definidas pela Sec. de Comunicação baseada no interesse público." }, { sub: "Formato", text: "Preferencialmente Reels (vertical) ou Cards." }, { sub: "Conteúdo", text: "Eduque sobre direitos e serviços. Não repasse Fake News." } ] },
+                            { id: 4, title: "3. Transparência", icon: "CheckCircle", details: [ { sub: "Confiabilidade", text: "Verifique todas as fontes antes de postar." }, { sub: "Responsabilidade", text: "Assuma erros e corrija informações incorretas rapidamente." } ] },
+                            { id: 5, title: "4. Engajamento", icon: "Users", details: [ { sub: "Respostas", text: "Responda dúvidas com precisão e educação." }, { sub: "Feedback", text: "Use as redes para coletar sugestões da população." }, { sub: "Respeito", text: "Trate todos com respeito, mesmo em discordâncias." } ] },
+                            { id: 6, title: "5. Privacidade e Neutralidade", icon: "Shield", details: [ { sub: "Dados Pessoais", text: "Nunca compartilhe dados de cidadãos sem consentimento." }, { sub: "Imparcialidade", text: "Trate todos de forma justa, sem discriminação." }, { sub: "Sem Política", text: "Evite manifestações político-partidárias." } ] },
+                            { id: 7, title: "6. Imagens e Direitos", icon: "Camera", details: [ { sub: "Autorização", text: "Use imagens/vídeos apenas com permissão." }, { sub: "Créditos", text: "Sempre dê crédito aos autores." }, { sub: "Campanhas", text: "Devem estar de acordo com as leis vigentes." } ] },
+                            { id: 8, title: "7. Monitoramento e Ética", icon: "BarChart", details: [ { sub: "Análise", text: "Acompanhe o engajamento e ajuste estratégias." }, { sub: "Integridade", text: "Mantenha comportamento ético em todas interações." }, { sub: "Empatia", text: "Mostre compreensão, especialmente em reclamações." } ] },
+                            { id: 9, title: "Regras de Convivência", icon: "AlertTriangle", details: [ { sub: "Proibido", text: "Linguagem ofensiva, ameaças, spam e flood." }, { sub: "Preconceito", text: "Comentários racistas/LGBTfóbicos serão apagados e usuário bloqueado." }, { sub: "Consequências", text: "Advertência, ocultação ou bloqueio do perfil." } ] }
+                        ];
+                        const instaGradientText = { background: "linear-gradient(45deg, #f58529, #dd2a7b, #8134af, #515bd4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" };
+                        const instaGradientBg = "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)";
+                        return (
+                            <div className="animate-fade-in">
+                                <SectionHeader iconName="Users" title="Boas Práticas em Redes Sociais (Instagram, Facebook, TikTok, etc)" duration="20 minutos" isCompleted={completed[3]} onToggle={() => toggleComplete(3)} />
+                                <div className="mb-6 bg-white p-6 rounded-xl shadow-sm border-l-4 border-pink-500">
+                                    <h3 className="text-lg font-bold mb-2" style={instaGradientText}>Manual de Redes Sociais da PMF</h3>
+                                    <p className="text-gray-600">As redes sociais são vitais para informar e engajar. Este guia, baseado no Manual da Prefeitura de Florianópolis, estabelece os padrões de interação, criação de conteúdo e ética digital.</p>
+                                </div>
+                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {socialMediaGuides.map((guide) => (
+                                        <div key={guide.id} className="flip-card group bg-transparent w-full h-80 perspective-1000 cursor-pointer">
+                                            <div className="flip-card-inner relative w-full h-full text-center transition-transform duration-700 transform-style-3d shadow-md rounded-xl">
+                                                <div className="absolute w-full h-full backface-hidden bg-white border-2 border-pink-100 rounded-xl flex flex-col items-center justify-center p-6 text-gray-800">
+                                                    <div className="p-4 rounded-full mb-4 text-white shadow-md" style={{ background: instaGradientBg }}>
+                                                        {Icons[guide.icon] ? React.createElement(Icons[guide.icon], { size: 32 }) : null}
+                                                    </div>
+                                                    <h3 className="text-xl font-bold" style={{ color: '#c13584' }}>{guide.title}</h3>
+                                                    <p className="text-xs mt-4 uppercase tracking-widest font-semibold" style={{ color: '#e1306c' }}>Ver Detalhes</p>
+                                                </div>
+                                                <div className="absolute w-full h-full backface-hidden rotate-y-180 text-white rounded-xl p-6 flex flex-col justify-center text-left overflow-y-auto" style={{ background: instaGradientBg }}>
+                                                    <h4 className="font-bold border-b border-white/30 pb-2 mb-3 text-lg">{guide.title}</h4>
+                                                    <ul className="space-y-3 text-sm">{guide.details.map((detail, idx) => ( <li key={idx}><span className="font-bold text-yellow-200 block text-xs">{detail.sub}</span><span className="leading-tight">{detail.text}</span></li>))}</ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    case 4:
+                        return (
+                            <div className="animate-fade-in">
+                                <SectionHeader iconName="Share2" title="Guias Oficiais para Leitura Complementar" duration="30 minutos" isCompleted={completed[4]} onToggle={() => toggleComplete(4)} />
+                                <div className="bg-gradient-to-br from-indigo-50 to-white rounded-xl shadow-sm p-8 text-center">
+                                    <p className="text-gray-700 mb-8 max-w-2xl mx-auto">A comunicação clara e ética nas redes sociais fortalece a confiança do cidadão. Abaixo estão os guias oficiais para leitura.</p>
+                                    <div className="grid md:grid-cols-3 gap-6">
+                                        <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 flex flex-col items-center hover:-translate-y-1 transition-transform">
+                                            <div className="bg-blue-100 p-4 rounded-full mb-4 text-blue-600"><Icons.FileText size={32} /></div>
+                                            <h3 className="font-bold text-lg mb-2">Governo Federal</h3>
+                                            <p className="text-xs text-gray-500 mb-6">Guia de referência nacional</p>
+                                            <a href="https://drive.google.com/file/d/1_R5nYjpGvb9xfYXqokFXwf3XITiKR70f/view?usp=sharing" target="_blank" rel="noreferrer" className="mt-auto w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2 text-sm font-medium transition-colors">Acessar Guia <Icons.ExternalLink size={14}/></a>
+                                        </div>
+                                        <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 flex flex-col items-center hover:-translate-y-1 transition-transform">
+                                            <div className="bg-cyan-100 p-4 rounded-full mb-4 text-cyan-600"><Icons.FileText size={32} /></div>
+                                            <h3 className="font-bold text-lg mb-2">Prefeitura de Florianópolis</h3>
+                                            <p className="text-xs text-gray-500 mb-6">Guia de referência para profissionais da PMF.</p>
+                                            <a href="https://drive.google.com/file/d/1rj1-6gmb7rvxakaxAAkh7qEXSuY552WC/view?usp=sharing" target="_blank" rel="noreferrer" className="mt-auto w-full py-2 px-4 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 flex items-center justify-center gap-2 text-sm font-medium transition-colors">Acessar Guia <Icons.ExternalLink size={14}/></a>
+                                        </div>
+                                        <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 flex flex-col items-center hover:-translate-y-1 transition-transform">
+                                            <div className="bg-green-100 p-4 rounded-full mb-4 text-green-600"><Icons.FileText size={32} /></div>
+                                            <h3 className="font-bold text-lg mb-2">Governo do RS</h3>
+                                            <p className="text-xs text-gray-500 mb-6">Exemplo a nível estadual. Santa Catarina não disponibilizava guia publicado até a data da confecção deste material.</p>
+                                            <a href="https://drive.google.com/file/d/1G0aJwnFwviCdZup0DzkrxjqjxiZx-ZKH/view?usp=sharing" target="_blank" rel="noreferrer" className="mt-auto w-full py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 text-sm font-medium transition-colors">Acessar Guia <Icons.ExternalLink size={14}/></a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    case 5:
+                        return (
+                            <div className="animate-fade-in">
+                                <SectionHeader iconName="ClipboardCheck" title="Exercício - Responda às perguntas do formulário para finalizar o conteúdo" duration="25 min" isCompleted={completed[5]} onToggle={() => toggleComplete(5)} />
+                                <div className="bg-white p-8 rounded-xl shadow-lg text-center">
+                                    <div className="mb-6 inline-block p-4 bg-teal-50 rounded-full">
+                                        <Icons.ClipboardCheck size={48} className="text-teal-600" />
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-gray-800 mb-4">Avaliação Final do Módulo</h3>
+                                    <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
+                                        Parabéns por completar as atividades de estudo! Para consolidar seu aprendizado e finalizar este módulo, por favor, responda ao formulário de avaliação abaixo.
+                                    </p>
+                                    <a 
+                                        href="https://docs.google.com/forms/d/e/1FAIpQLSd5p2C4oJ7aeOrHOAyQbATrUYLsJ5qJ2JcIB_YotxTo80S0og/viewform?usp=publish-editor" 
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center justify-center gap-3 bg-teal-600 text-white font-bold py-4 px-8 rounded-full hover:bg-teal-700 hover:scale-105 transition-all shadow-md text-lg"
+                                    >
+                                        Acessar Formulário de Avaliação <Icons.ExternalLink size={20} />
+                                    </a>
+                                </div>
+                            </div>
+                        );
+                    default: return null;
+                }
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col md:flex-row">
+                    {/* Mobile Header */}
+                    <div className="md:hidden bg-teal-800 text-white p-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
+                        <span className="font-bold text-lg">ESP Floripa</span>
+                        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+                            {isSidebarOpen ? <Icons.X /> : <Icons.Menu />}
+                        </button>
+                    </div>
+
+                    {/* Sidebar */}
+                    <aside className={`fixed md:sticky top-0 h-screen w-72 bg-white border-r border-gray-200 z-40 transform transition-transform duration-300 ease-in-out flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+                        <div className="p-6 gradient-header text-white shrink-0">
+                            <h1 className="font-bold text-xl leading-tight">Curso Livre</h1>
+                            <p className="text-teal-100 text-sm mt-1">Escola de Saúde Pública de Florianópolis</p>
+                            
+                            <div className="mt-6">
+                                <div className="flex justify-between text-xs text-teal-100 mb-1"><span>Progresso da Aula</span><span>{progress}%</span></div>
+                                <div className="w-full bg-teal-900/30 rounded-full h-2"><div className="bg-white h-2 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div></div>
+                            </div>
+                        </div>
+                        <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
+                            {activities.map((act) => (
+                                <button key={act.id} onClick={() => scrollToActivity(act.id)} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${activeTab === act.id ? 'bg-teal-50 text-teal-800 border-r-4 border-teal-600 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}>
+                                    <div className="relative">
+                                        {Icons[act.icon] ? React.createElement(Icons[act.icon], { size: 18 }) : null}
+                                        {completed[act.id] && <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-[2px] border border-white"><div className="w-1.5 h-1.5 bg-white rounded-full"></div></div>}
+                                    </div>
+                                    <span className="text-sm truncate">{act.title}</span>
+                                </button>
+                            ))}
+                        </nav>
+                        <div className="p-4 border-t text-xs text-gray-400 text-center">© 2025 ESP-Floripa<br/>Todos os direitos reservados.</div>
+                    </aside>
+
+                    {/* Main Content */}
+                    <main className="flex-1 p-6 md:p-10 max-w-5xl mx-auto w-full">
+                        <div className="mb-8 main-banner p-8 rounded-2xl shadow-md border border-gray-200">
+                            <span className="text-teal-700 font-bold tracking-wide text-sm uppercase bg-white/80 px-2 py-1 rounded backdrop-blur-sm">Módulo EAD</span>
+                            <h2 className="text-3xl font-extrabold text-teal-900 mt-3 drop-shadow-sm">Comunicação Escrita - Meios eletrônicos</h2>
+                            <p className="text-teal-900 font-medium mt-2 max-w-2xl bg-white/60 p-1 rounded backdrop-blur-sm inline-block">Atividades, leituras e exercícios práticos para gestão eficiente.</p>
+                            
+                            <div className="mt-6 flex flex-wrap gap-4">
+                                <button 
+                                    onClick={() => setIsModalOpen(true)}
+                                    className="flex items-center justify-center text-lg text-white bg-teal-700 py-2 px-6 rounded-full hover:bg-teal-800 transition-colors shadow-lg"
+                                >
+                                    <Icons.GraduationCap className="mr-2" size={20} />
+                                    Curso Livre - Instruções
+                                </button>
+
+                                <a 
+                                    href="https://espfloripa.github.io/cursoslivres/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center text-lg text-white bg-teal-700 py-2 px-6 rounded-full hover:bg-teal-800 transition-colors shadow-lg"
+                                >
+                                    <Icons.PenTool className="mr-2" size={20} />
+                                    Curso Livre - Inscrição
+                                </a>
+                            </div>
+                        </div>
+                        {renderContent()}
+                    </main>
+                    {isSidebarOpen && <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setIsSidebarOpen(false)}></div>}
+
+                    {/* Modal */}
+                    {isModalOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 relative animate-fade-in">
+                                <button 
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                                >
+                                    <Icons.X size={24} />
+                                </button>
+                                <h3 className="text-2xl font-bold text-teal-900 mb-4">Instruções do Curso Livre</h3>
+                                <div className="text-slate-700">
+                                    <ol className="list-decimal list-inside space-y-3 text-base">
+                                        <li>Este Curso Livre é voltado para profissionais da SMS de Florianópolis e será certificado com a carga horária de 2 horas/aula.</li>
+                                        <li>Você deve clicar no botão disponível ao lado (ou <a href="https://espfloripa.github.io/cursoslivres/" target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:underline font-semibold">aqui</a>) e preencher todos os campos para se inscrever no curso no mês corrente.</li>
+                                        <li>Após a inscrição realizada, você tem até o último dia do mês para responder o teste de aproveitamento disponibilizado no botão no fim da página.</li>
+                                        <li>Ao responder o teste de aproveitamento coloque o nome completo e CPF conforme você colocou no link de inscrição.</li>
+                                        <li>A nota de corte para aprovação é de 80%.</li>
+                                        <li>O teste de aproveitamento só permite uma resposta por participante, caso você não seja aprovado poderá repetir o curso no mês seguinte.</li>
+                                        <li>O certificado será disponibilizado até o último dia útil do mês seguinte à finalização do curso.</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
