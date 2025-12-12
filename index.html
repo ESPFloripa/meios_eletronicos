@@ -157,9 +157,11 @@
 
         const App = () => {
             const [activeTab, setActiveTab] = useState(0);
-            const [completed, setCompleted] = useState([false, false, false, false, false, false]);
+            const [completed, setCompleted] = useState([false, false, false, false, false, false, false]);
             const [isSidebarOpen, setIsSidebarOpen] = useState(false);
             const [isModalOpen, setIsModalOpen] = useState(false);
+            // Novo estado para o zoom da imagem
+            const [isImageZoomed, setIsImageZoomed] = useState(false);
 
             useEffect(() => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -179,7 +181,8 @@
                 { id: 2, title: "2ª Ativ: Boas Práticas no uso de Mensageria", icon: 'MessageCircle', duration: "20 min" },
                 { id: 3, title: "3ª Ativ: Boas Práticas em Redes Sociais", icon: 'Users', duration: "20 min" },
                 { id: 4, title: "4ª Ativ: Guias Oficiais Leitura", icon: 'Share2', duration: "30 min" },
-                { id: 5, title: "5ª Ativ: Exercício Final", icon: 'ClipboardCheck', duration: "25 min" }
+                { id: 5, title: "5ª Ativ: Resumo em Infográfico", icon: 'BarChart', duration: "10 min" },
+                { id: 6, title: "6ª Ativ: Exercício Final", icon: 'ClipboardCheck', duration: "25 min" }
             ];
 
             const scrollToActivity = (index) => {
@@ -360,10 +363,43 @@
                                 </div>
                             </div>
                         );
-                    case 5:
+                    case 5: // Nova Atividade 5: Resumo em Infográfico
                         return (
                             <div className="animate-fade-in">
-                                <SectionHeader iconName="ClipboardCheck" title="Exercício - Responda às perguntas do formulário para finalizar o conteúdo" duration="25 min" isCompleted={completed[5]} onToggle={() => toggleComplete(5)} />
+                                <SectionHeader iconName="BarChart" title="Resumo em Infográfico" duration="10 minutos" isCompleted={completed[5]} onToggle={() => toggleComplete(5)} />
+                                <div className="bg-white p-6 rounded-xl shadow-sm">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Resumo Visual</h3>
+                                    <p className="text-gray-700 mb-6">Confira abaixo um infográfico resumindo os principais pontos abordados no curso. Clique na imagem para ampliar.</p>
+                                    <img 
+                                        src="https://imgur.com/FCX7aBp.png" 
+                                        alt="Infográfico Resumo" 
+                                        className="w-full h-auto rounded-lg shadow-md cursor-zoom-in hover:opacity-95 transition-opacity"
+                                        onClick={() => setIsImageZoomed(true)}
+                                    />
+                                </div>
+                                
+                                {/* Modal de Zoom da Imagem */}
+                                {isImageZoomed && (
+                                    <div 
+                                        className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 cursor-zoom-out animate-fade-in"
+                                        onClick={() => setIsImageZoomed(false)}
+                                    >
+                                        <img 
+                                            src="https://imgur.com/FCX7aBp.png" 
+                                            alt="Infográfico Resumo Ampliado" 
+                                            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                                        />
+                                        <button className="absolute top-4 right-4 text-white p-2 bg-black/50 rounded-full hover:bg-black/70">
+                                            <Icons.X size={32} />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    case 6: // Renumerado: Exercício Final
+                        return (
+                            <div className="animate-fade-in">
+                                <SectionHeader iconName="ClipboardCheck" title="Exercício - Responda às perguntas do formulário para finalizar o conteúdo" duration="25 min" isCompleted={completed[6]} onToggle={() => toggleComplete(6)} />
                                 <div className="bg-white p-8 rounded-xl shadow-lg text-center">
                                     <div className="mb-6 inline-block p-4 bg-teal-50 rounded-full">
                                         <Icons.ClipboardCheck size={48} className="text-teal-600" />
@@ -425,9 +461,9 @@
                     {/* Main Content */}
                     <main className="flex-1 p-6 md:p-10 max-w-5xl mx-auto w-full">
                         <div className="mb-8 main-banner p-8 rounded-2xl shadow-md border border-gray-200">
-                            <span className="text-teal-700 font-bold tracking-wide text-sm uppercase bg-white/80 px-2 py-1 rounded backdrop-blur-sm">Módulo EAD</span>
-                            <h2 className="text-3xl font-extrabold text-teal-900 mt-3 drop-shadow-sm">Comunicação Escrita - Meios eletrônicos</h2>
-                            <p className="text-teal-900 font-medium mt-2 max-w-2xl bg-white/60 p-1 rounded backdrop-blur-sm inline-block">Atividades, leituras e exercícios práticos para gestão eficiente.</p>
+                            <span className="text-teal-700 font-bold tracking-wide text-sm uppercase bg-white/80 px-2 py-1 rounded backdrop-blur-sm">Curso Livre</span>
+                            <h2 className="text-3xl font-extrabold text-teal-900 mt-3 drop-shadow-sm">Boas Práticas de Comunicação em Meios eletrônicos</h2>
+                            <p className="text-teal-900 font-medium mt-2 max-w-2xl bg-white/60 p-1 rounded backdrop-blur-sm inline-block">Atividades, leituras e exercícios práticos para o trabalho eficiente.</p>
                             
                             <div className="mt-6 flex flex-wrap gap-4">
                                 <button 
